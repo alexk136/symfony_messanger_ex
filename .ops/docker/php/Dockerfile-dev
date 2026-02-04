@@ -21,7 +21,7 @@ RUN apt-get update && \
       php7.4-curl \
       php7.4-zip \
       php7.4-intl \
-      php7.4-mysql \
+      php7.4-pgsql \
       fish && \
     apt-get autoremove -y && \
     apt-get clean && \
@@ -37,6 +37,7 @@ RUN usermod -u 10033 www-data && \
     chmod 777 /run/php
 
 COPY .ops/docker/php/php-fpm.conf /etc/php/7.4/fpm/php-fpm.conf
+COPY .ops/docker/php/www.conf /etc/php/7.4/fpm/pool.d/www.conf
 
 WORKDIR /var/www
 
