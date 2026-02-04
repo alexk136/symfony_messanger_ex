@@ -5,20 +5,37 @@ namespace App\Controller;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
+use App\Service\ChatService;
+use Symfony\Component\HttpFoundation\JsonResponse;
 
 /**
  * @Route("/api/chats")
  */
 class ChatController extends AbstractController
 {
+    private $chatService;
+
+    public function __construct(ChatService $chatService)
+    {
+        $this->chatService = $chatService;
+    }
+
     /**
      * POST /api/chats
      * 
      * @Route("", methods={"POST"})
      */
-    public function create(Request $request)
+    public function create(Request $request): JsonResponse
     {
-        // Logic to create a new chat
+        $data = json_decode($request->getContent(), true);
+    
+        if (!isset($data['user_id'])) {
+            return new JsonResponse(['error' => 'User id not provided'], 400);
+        }
+
+        $this->chatService->createChat($data['user_id']);
+
+        return new JsonResponse(['status' => 'created']);
     }
 
     /**
@@ -26,18 +43,31 @@ class ChatController extends AbstractController
      * 
      * @Route("", methods={"GET"})
      */
-    public function list(Request $request)
+    public function list(Request $request): JsonResponse
     {
-        // Logic to show a specific chat by ID
+        $limit = min((int)$request->query->get('limit', 50), 100);
+
+        $this->chatService->listChats($limit);
+
+        return new JsonResponse(['status' => 'listed']);
     }
 
     /**
-     * POST /api/v1/chats/{id}/close
+     * POST /api/chats/{id}/close
      * 
      * @Route("/{id}/close", methods={"POST"})
      */
-    public function close(int $id, Request $request) {
+    public function close(int $id, Request $request): JsonResponse
+    {
+        $data = json_decode($request->getContent(), true);
+    
+        if (!isset($data['user_id'])) {
+            return new JsonResponse(['error' => 'User id not provided'], 400);
+        }
 
+        $this->chatService->closeChat($id, $data['user_id']);
+
+        return new JsonResponse(['status' => 'closed']);
     }
 
     /**
@@ -47,6 +77,14 @@ class ChatController extends AbstractController
      */
     public function sendMessage(int $id, Request $request)
     {
-        // Logic to show a specific chat by ID
+        $data = json_decode($request->getContent(), true);
+    
+        if (!isset($data['user_id']) || !isset($data['message'])) {
+            return new JsonResponse(['error' => 'User id and message required'], 400);
+        }
+
+        $this->chatService->sendMessage($id, $data['user_id'], $data['message']);
+
+        return new JsonResponse(['status' => 'message sent']);
     }
 }

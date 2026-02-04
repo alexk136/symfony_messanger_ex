@@ -1,8 +1,9 @@
 <?php
 
 namespace App\Repository;
+use Doctrine\ORM\EntityRepository;
 
-class MessageRepository
+class MessageRepository extends EntityRepository
 {
     
 }
