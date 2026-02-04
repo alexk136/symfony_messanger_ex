@@ -21,28 +21,25 @@ class UserController extends AbstractController
     }
 
     /**
-     * POST /api/users
+     * POST /api/users/login
      *
-     * @Route("", methods={"POST"})
+     * @Route("/login", methods={"POST"})
      */
-    public function register(Request $request): JsonResponse
+    public function login(Request $request): JsonResponse
     {
         $data = json_decode($request->getContent(), true);
 
-        if (!isset($data['email']) || !isset($data['password']) || !isset($data['username'])) {
-            return new JsonResponse(['error' => 'Email, password and username are required'], 400);
+        if (!isset($data['email'])) {
+            return new JsonResponse(['error' => 'Email is required'], 400);
         }
 
-        if (!filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
-            return new JsonResponse(['error' => 'Invalid email format'], 400);
-        }
         try {
-            $user = $this->userService->register($data);
+            $user = $this->userService->login($data);
             return new JsonResponse([
                 'id' => $user->getId(),
                 'email' => $user->getEmail(),
-                'message' => 'User registered successfully'
-            ], 201);
+                'message' => 'Login successful'
+            ]);
         } catch (\Exception $e) {
             return new JsonResponse(['error' => $e->getMessage()], 400);
         }
