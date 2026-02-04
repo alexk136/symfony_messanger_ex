@@ -19,7 +19,6 @@
         "symfony/framework-bundle": "5.4.*",
         "symfony/monolog-bundle": "^3.10",
         "symfony/runtime": "5.4.*",
-        "symfony/security-bundle": "5.4.*",
         "symfony/yaml": "5.4.*",
         "workerman/workerman": "^4.1"
     },
