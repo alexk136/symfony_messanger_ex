@@ -155,41 +155,4 @@ class ChatController extends AbstractController
 
         return new JsonResponse(['status' => 'operator assigned']);
     }
-
-    /**
-     * GET /api/chats/{id}/events
-     * 
-     * @Route("/{id}/events", methods={"GET"})
-     */
-    public function events(int $id, Request $request)
-    {
-        // $afterId = $request->query->get('after_id') ? (int)$request->query->get('after_id') : 0;
-
-        // $response = new \Symfony\Component\HttpFoundation\StreamedResponse();
-        // $response->setCallback(function () use ($id, $afterId) {
-        //     $lastId = $afterId;
-        //     while (true) {
-        //         $messages = $this->chatService->getMessages($id, 100, null, $lastId);
-        //         foreach ($messages as $message) {
-        //             echo "data: " . json_encode([
-        //                 'id' => $message->getId(),
-        //                 'text' => $message->getText(),
-        //                 'direction' => $message->getDirection(),
-        //                 'userId' => $message->getUserId(),
-        //                 'createdAt' => $message->getCreatedAt()->format('Y-m-d H:i:s'),
-        //             ]) . "\n\n";
-        //             $lastId = $message->getId();
-        //         }
-        //         ob_flush();
-        //         flush();
-        //         sleep(1); // Poll every second
-        //     }
-        // });
-
-        // $response->headers->set('Content-Type', 'text/event-stream');
-        // $response->headers->set('Cache-Control', 'no-cache');
-        // $response->headers->set('Connection', 'keep-alive');
-
-        // return $response;
-    }
 }
