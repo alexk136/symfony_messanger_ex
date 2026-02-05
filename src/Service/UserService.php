@@ -16,13 +16,15 @@ class UserService
 
     public function login(array $data): User
     {
-        $user = $this->em->getRepository(User::class)->findOneBy(['email' => $data['email']]);
+        $user = $this->em->getRepository(User::class)->findOneBy(['email' => $data['email'], 'role' => $data['role']]);
+        
         if (!$user) {
             $this->em->beginTransaction();
             try {
                 $user = new User();
                 $user->setEmail($data['email']);
-                $user->setCreatedAt(new \DateTime());
+                $user->setName($data['name']);
+                $user->setRole($data['role'] === User::ROLE_OPERATOR ? User::ROLE_OPERATOR : User::ROLE_CLIENT);
 
                 $this->em->persist($user);
                 $this->em->flush();
@@ -33,5 +35,10 @@ class UserService
             }
         }
         return $user;
+    }
+
+    public function getUserById(int $id): ?User
+    {
+        return $this->em->getRepository(User::class)->find($id);
     }
 }

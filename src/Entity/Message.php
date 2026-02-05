@@ -2,12 +2,20 @@
 
 namespace App\Entity;
 
-use Doctrine\Common\Collections\ArrayCollection;
-use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 
 /**
- * @ORM\Table(name="messages")
+ * @ORM\Table(
+ *     name="messages",
+ *     indexes={
+ *         @ORM\Index(name="idx_message_chat_id", columns={"chat_id", "id"}),
+ *         @ORM\Index(name="idx_message_status", columns={"status"}),
+ *         @ORM\Index(name="idx_message_created_at", columns={"created_at"})
+ *     },
+ *     uniqueConstraints={
+ *         @ORM\UniqueConstraint(name="uniq_client_msg_user", columns={"client_msg_id", "user_id"})
+ *     }
+ * )
  * @ORM\Entity(repositoryClass="App\Repository\MessageRepository")
  */
 class Message
@@ -17,6 +25,9 @@ class Message
 
     const TYPE_TEXT = 'text';
     const TYPE_IMAGE = 'image';
+
+    const STATUS_NEW = 'new';
+    const STATUS_READ = 'read';
 
 
     /**
@@ -48,9 +59,19 @@ class Message
     private $type = self::TYPE_TEXT;
 
     /**
+     * @ORM\Column(type="string", length=20)
+     */
+    private $status = self::STATUS_NEW;
+
+    /**
      * @ORM\Column(type="integer", nullable=true)
      */
     private $userId;
+
+    /**
+     * @ORM\Column(type="string", length=255, nullable=true)
+     */
+    private $clientMsgId;
 
     /**
      * @ORM\Column(type="datetime")
@@ -130,5 +151,29 @@ class Message
     public function getCreatedAt(): ?\DateTimeInterface
     {
         return $this->createdAt;
+    }
+
+    public function getClientMsgId(): ?string
+    {
+        return $this->clientMsgId;
+    }
+
+    public function setClientMsgId(?string $clientMsgId): self
+    {
+        $this->clientMsgId = $clientMsgId;
+
+        return $this;
+    }
+
+    public function getStatus(): string
+    {
+        return $this->status;
+    }
+
+    public function setStatus(string $status): self
+    {
+        $this->status = $status;
+
+        return $this;
     }
 }

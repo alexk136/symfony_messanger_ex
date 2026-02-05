@@ -6,11 +6,19 @@ use Doctrine\ORM\Mapping as ORM;
 use App\Entity\Media;
 
 /**
- * @ORM\Table(name="users")
+ * @ORM\Table(
+ *     name="users",
+ *     indexes={
+ *         @ORM\Index(name="idx_user_email_role", columns={"email", "role"})
+ *     }
+ * )
  * @ORM\Entity(repositoryClass="App\Repository\UserRepository")
  */
 class User
 {
+    const ROLE_CLIENT = 'client';
+    const ROLE_OPERATOR = 'operator';
+
     /**
      * @ORM\Id
      * @ORM\GeneratedValue
@@ -29,6 +37,11 @@ class User
     private $name;
 
     /**
+     * @ORM\Column(type="string", length=20)
+     */
+    private $role = self::ROLE_CLIENT;
+
+    /**
      * @ORM\Column(type="datetime")
      */
     private $createdAt;
@@ -38,11 +51,11 @@ class User
      */
     private $updatedAt;
 
-    /**
-     * @ORM\OneToOne(targetEntity="Media", cascade={"persist", "remove"})
-     * @ORM\JoinColumn(name="avatar_id", referencedColumnName="id", nullable=true)
-     */
-    private $avatar;
+    public function __construct()
+    {
+        $this->createdAt = new \DateTime();
+        $this->updatedAt = new \DateTime();
+    }
 
     public function getId(): ?int
     {
@@ -73,6 +86,18 @@ class User
         return $this;
     }
 
+    public function getRole(): ?string
+    {
+        return $this->role;
+    }
+
+    public function setRole(string $role): self
+    {
+        $this->role = $role;
+
+        return $this;
+    }
+
     public function getCreatedAt(): ?\DateTimeInterface
     {
         return $this->createdAt;
@@ -93,18 +118,6 @@ class User
     public function setUpdatedAt(?\DateTimeInterface $updatedAt): self
     {
         $this->updatedAt = $updatedAt;
-
-        return $this;
-    }
-
-    public function getAvatar(): ?Media
-    {
-        return $this->avatar;
-    }
-
-    public function setAvatar(?Media $avatar): self
-    {
-        $this->avatar = $avatar;
 
         return $this;
     }

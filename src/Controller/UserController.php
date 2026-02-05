@@ -6,6 +6,7 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
 use App\Service\UserService;
+use Exception;
 use Symfony\Component\HttpFoundation\JsonResponse;
 
 /**
@@ -33,12 +34,21 @@ class UserController extends AbstractController
             return new JsonResponse(['error' => 'Email is required'], 400);
         }
 
+        if (!isset($data['name'])) {
+            return new JsonResponse(['error' => 'Name is required'], 400);
+        }
+
+        if (!isset($data['role'])) {
+            return new JsonResponse(['error' => 'Role is required'], 400);
+        }
+
         try {
             $user = $this->userService->login($data);
             return new JsonResponse([
                 'id' => $user->getId(),
                 'email' => $user->getEmail(),
-                'message' => 'Login successful'
+                'name' => $user->getName(),
+                'role' => $user->getRole(),
             ]);
         } catch (\Exception $e) {
             return new JsonResponse(['error' => $e->getMessage()], 400);

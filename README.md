@@ -1,1 +1,4 @@
-# symfony_messanger_ex
+# Simple messanger example on websockets
+
+
+1.  

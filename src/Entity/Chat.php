@@ -7,7 +7,15 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 
 /**
- * @ORM\Table(name="chats")
+ * @ORM\Table(
+ *     name="chats",
+ *     indexes={
+ *         @ORM\Index(name="idx_chat_user_last_msg", columns={"user_id", "last_message_at"}),
+ *         @ORM\Index(name="idx_chat_operator_last_msg", columns={"operator_id", "last_message_at"}),
+ *         @ORM\Index(name="idx_chat_status", columns={"status"}),
+ *         @ORM\Index(name="idx_chat_last_message_at", columns={"last_message_at"})
+ *     }
+ * )
  * @ORM\Entity(repositoryClass="App\Repository\ChatRepository")
  */
 class Chat
@@ -26,6 +34,11 @@ class Chat
      * @ORM\Column(type="integer")
      */
     private $userId;
+
+    /**
+     * @ORM\Column(type="integer", nullable=true)
+     */
+    private $operatorId;
 
     /**
      * @ORM\Column(type="string", length=20)
@@ -88,6 +101,18 @@ class Chat
     public function setUserId(int $userId): self
     {
         $this->userId = $userId;
+
+        return $this;
+    }
+
+    public function getOperatorId(): ?int
+    {
+        return $this->operatorId;
+    }
+
+    public function setOperatorId(?int $operatorId): self
+    {
+        $this->operatorId = $operatorId;
 
         return $this;
     }
@@ -185,5 +210,10 @@ class Chat
         }
 
         return $this;
-    }    
+    }
+
+    public function isClosed(): bool
+    {
+        return $this->status === self::STATUS_CLOSED;
+    }
 }

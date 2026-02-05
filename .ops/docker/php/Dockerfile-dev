@@ -22,6 +22,7 @@ RUN apt-get update && \
       php7.4-zip \
       php7.4-intl \
       php7.4-pgsql \
+      postgresql-client \
       fish && \
     apt-get autoremove -y && \
     apt-get clean && \
@@ -41,6 +42,10 @@ COPY .ops/docker/php/www.conf /etc/php/7.4/fpm/pool.d/www.conf
 
 WORKDIR /var/www
 
-EXPOSE 9000
+COPY .ops/docker/php/entrypoint-dev.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
 
+EXPOSE 9000 8080
+
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 CMD ["php-fpm7.4", "-F"]

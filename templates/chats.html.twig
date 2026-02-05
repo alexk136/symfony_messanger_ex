@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Chats</title>
+  <link href="//maxcdn.bootstrapcdn.com/bootstrap/4.1.1/css/bootstrap.min.css" rel="stylesheet" id="bootstrap-css">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.css" type="text/css" rel="stylesheet">
+  <link rel="stylesheet" href="/css/chat.css">
+  <script src="//maxcdn.bootstrapcdn.com/bootstrap/4.1.1/js/bootstrap.min.js"></script>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+  <style>
+    .close-chat-btn {
+      margin-left: 10px;
+      padding: 5px 15px;
+    }
+    .chat-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px;
+      background-color: #f8f9fa;
+      border-bottom: 1px solid #dee2e6;
+      margin-bottom: 10px;
+    }
+    .chat-header h4 {
+      margin: 0;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+<h3 class="text-center">Messaging</h3>
+<div class="messaging">
+      <div class="inbox_msg">
+        <div class="inbox_people">
+          <div class="headind_srch">
+            <div class="recent_heading">
+              <h4>Recent</h4>
+            </div>
+            <button id="new-chat-btn" class="btn btn-primary btn-sm" style="margin-left: auto;">Начать новый чат</button>
+          </div>
+          <div class="inbox_chat" id="chat-list">
+            <!-- Dynamic chat list -->
+          </div>
+        </div>
+        <div class="mesgs">
+          <div class="chat-header" id="chat-header" style="display: none;">
+            <h4 id="chat-title">Chat</h4>
+            <button id="close-chat-btn" class="btn btn-danger btn-sm close-chat-btn" style="display: none;">
+              <i class="fa fa-times" aria-hidden="true"></i> Закрыть чат
+            </button>
+          </div>
+          <div class="msg_history" id="chat-area">
+            <p>Select a chat from the left to start messaging.</p>
+          </div>
+          <div class="type_msg">
+            <div class="input_msg_write">
+              <input type="text" class="write_msg" placeholder="Type a message" disabled />
+              <button class="msg_send_btn" type="button" disabled><i class="fa fa-paper-plane-o" aria-hidden="true"></i></button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="text-center top_spac"> Design by <a target="_blank" href="https://www.linkedin.com/in/sunil-rajput-nattho-singh/">Sunil Rajput</a></p>
+    </div></div>
+
+
+
+  <script>
+
+    var useWS = false;
+    var WSauthenticated = false;
+
+    const ws = new WebSocket('ws://localhost:8080');
+
+
+    const userId = {{ userId is not null ? userId : 'null' }};
+    const userName = "{{ userName is not null ? userName : '' }}";
+    const role = "{{ role is not null ? role : '' }}";
+    var currentChatId = null;
+
+    ws.onopen = () => {
+        console.log('Connected');
+        useWS= true;
+    };
+
+    ws.onmessage = (event) => {
+        console.log('Received:', event.data);
+
+        data = JSON.parse(event.data);
+
+        if(data['type'] === 'message_send') {
+            console.log('Reloading messages for chat', currentChatId);
+            loadMessages(currentChatId); // yep, full reload, enouth for testing
+        }
+
+        if (data['type'] === 'new_message') {
+            WSauthenticated = true;
+            console.log('New message recived', currentChatId);
+            loadMessages(currentChatId);
+        }
+    };
+
+    ws.onclose = () => {
+        console.log('Disconnected');
+    };
+    
+
+    if (role === 'operator') {
+        document.getElementById('new-chat-btn').style.display = 'none';
+    }
+
+    async function loadChats() {
+        const response = await fetch(`/api/chats?user_id=${userId}&limit=50`);
+        const chats = await response.json();
+        const list = document.getElementById('chat-list');
+        list.innerHTML = '';
+        chats.forEach(chat => {
+            const div = document.createElement('div');
+            let new_chat_for_operator = '';
+            let chat_closed = '';
+
+            if (!chat.operatorId) {
+                new_chat_for_operator = 'new_chat alert-info';
+            }
+
+            if (chat.status === 'closed') {
+                chat_closed = 'chat_closed alert-danger';
+            }
+
+            div.className = 'chat_list';
+            div.onclick = () => loadMessages(chat.id);
+            div.innerHTML = `
+            <div class="chat_people ${new_chat_for_operator} ${chat_closed}" id="chat_${chat.id}">
+                <div class="chat_img"> <img src="https://ptetutorials.com/images/user-profile.png" alt="user"> </div>
+                <div class="chat_ib">
+                <h5>Chat ${chat.id} <span class="chat_date">${chat.lastMessageAt ? new Date(chat.lastMessageAt).toLocaleDateString() : ''}</span></h5>
+                <p>${chat.lastMessageAt ? 'Last: ' + chat.lastMessageAt : 'No messages'}</p>
+                </div>
+            </div>
+            `;
+            list.appendChild(div);
+        });
+    }
+
+    async function loadMessages(chatId) {
+        currentChatId = chatId;
+
+        if (WSauthenticated == false && useWS == true) {
+            ws.send(JSON.stringify({ type: 'auth', chat_id: currentChatId }) );
+        }
+
+        const response = await fetch(`/api/chats/${chatId}/messages?limit=50&user_id=${userId}`);
+        const response_json = await response.json();
+        const messages = response_json['messages'];
+        const chatStatus = response_json['chatStatus'];
+        const container = document.getElementById('chat-area');
+        const chatElement = document.getElementById(`chat_${chatId}`);
+        const chatHeader = document.getElementById('chat-header');
+        const chatTitle = document.getElementById('chat-title');
+        const closeChatBtn = document.getElementById('close-chat-btn');
+
+        chatHeader.style.display = 'flex';
+        chatTitle.textContent = `Chat ${chatId}`;
+
+        console.log(chatStatus);
+
+        if (role === 'operator' && chatStatus === 'open') {
+            closeChatBtn.style.display = 'inline-block';
+        } else {
+            closeChatBtn.style.display = 'none';
+        }
+
+        if (chatElement.classList.contains('new_chat') && role === 'operator') {
+            chatElement.classList.remove('new_chat');
+            chatElement.classList.remove('alert-info');
+            await setChatOperator(chatId, userId); // just for testing, better on button 
+        }
+        
+        container.innerHTML = '';
+        messages.forEach(message => {
+            const div = document.createElement('div');
+            if (message.direction === 'in') {
+            div.className = 'incoming_msg';
+            div.innerHTML = `
+                <div class="incoming_msg_img"> <img src="https://ptetutorials.com/images/user-profile.png" alt="sunil"> </div>
+                <div class="received_msg">
+                <div class="received_withd_msg">
+                    <p>${message.text}</p>
+                    <span class="time_date"> ${new Date(message.createdAt).toLocaleTimeString()} | ${new Date(message.createdAt).toLocaleDateString()}</span></div>
+                </div>
+            `;
+            } else {
+            div.className = 'outgoing_msg';
+            div.innerHTML = `
+                <div class="sent_msg">
+                <p>${message.text}</p>
+                <span class="time_date"> ${new Date(message.createdAt).toLocaleTimeString()} | ${new Date(message.createdAt).toLocaleDateString()}</span> </div>
+            `;
+            }
+            container.appendChild(div);
+        });
+
+        container.scrollTop = container.scrollHeight;
+
+        if (chatStatus === 'open') {
+            messageForm(chatId);
+        }
+    }
+
+    async function setChatOperator(chatId, operatorId) {
+        await fetch(`/api/chats/${chatId}/assign-operator`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ operator_id: operatorId })
+        });
+    }
+
+    async function createChat() {
+        if (role === 'operator') {
+            alert('Operators cannot create new chats.');
+            return;
+        }
+    
+        const response = await fetch('/api/chats', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ user_id: parseInt(userId) })
+        });
+
+        const result = await response.json();
+        
+        loadChats();
+    }
+
+    async function messageForm(chatId) {
+        const inputField = document.querySelector('.write_msg');
+        const sendButton = document.querySelector('.msg_send_btn');
+
+        inputField.disabled = false;
+        sendButton.disabled = false;
+
+        sendButton.onclick = async () => {
+            const message = inputField.value;
+
+            if (!message) return;
+
+            const client_msg_id = crypto.randomUUID();
+
+            if (useWS) {
+                ws.send(JSON.stringify({ type: 'new_message', chat_id: chatId, user_id: userId, message: message, client_msg_id: client_msg_id }));
+            } else {
+                const response = await fetch(`/api/chats/${chatId}/messages`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: userId, message: message, client_msg_id: client_msg_id })
+                });
+
+                const result = await response.json();
+                console.log(result);
+                loadMessages(chatId);
+            }
+
+
+            
+            inputField.value = '';            
+        };
+    }
+
+    async function closeChat(chatId) {
+        const response = await fetch(`/api/chats/${chatId}/close`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ user_id: parseInt(userId) })
+        });
+
+        const result = await response.json();
+
+        if (result.error) {
+            alert('Error closing chat: ' + result.error);
+            return;
+        } else {
+            const closeChatBtn = document.getElementById('close-chat-btn');
+            closeChatBtn.style.display = 'none';
+
+            const inputField = document.querySelector('.write_msg');
+            const sendButton = document.querySelector('.msg_send_btn');
+
+            inputField.disabled = true;
+            sendButton.disabled = true;
+        }
+
+        alert('Chat closed');
+        loadChats();
+    }
+
+    document.getElementById('new-chat-btn').addEventListener('click', function() {
+        createChat();
+        return false;
+    });
+
+    document.getElementById('close-chat-btn').addEventListener('click', function() {
+        if (currentChatId) {
+            closeChat(currentChatId);
+        }
+    });
+
+    window.onload = loadChats;
+  </script>
+</body>
+</html>
